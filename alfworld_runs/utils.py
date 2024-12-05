@@ -34,18 +34,36 @@ def get_completion(prompt: str, temperature: float = 0.0, max_tokens: int = 256,
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def get_chat(prompt: str, model: Model="gpt-3.5-turbo", temperature: float = 0.0, max_tokens: int = 256, stop_strs: Optional[List[str]] = None, is_batched: bool = False) -> str:
-    assert model != "text-davinci-003"
-    messages = [
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        stop=stop_strs,
-        temperature=temperature,
-    )
-    return response.choices[0]["message"]["content"]
+    print("----Prompt to LLM----")
+    print(prompt)
+
+    print("----Type answer from LLM----")
+    lines = []
+    while True:
+        line = sys.stdin.readline().strip()
+        if line == "":
+            break
+        lines.append(line)
+    from_LLM = "\n".join(lines)
+    return from_LLM
+
+
+    # assert model != "text-davinci-003"
+    # messages = [
+    #     {
+    #         "role": "user",
+    #         "content": prompt
+    #     }
+    # ]
+    # response = openai.ChatCompletion.create(
+    #     model=model,
+    #     messages=messages,
+    #     max_tokens=max_tokens,
+    #     stop=stop_strs,
+    #     temperature=temperature,
+    # )
+    # return response.choices[0]["message"]["content"]
+
+
+
+
