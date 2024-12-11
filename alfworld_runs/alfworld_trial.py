@@ -55,6 +55,11 @@ def alfworld_run(env, base_prompt, memory: List[str], to_print=True, ob='', mode
     cur_step = 0
     while cur_step < 49:
         action = llm(str(env_history) + ">", stop=['\n'], model=model).strip()
+        action = action.replace("> ", "")
+        if action.startswith("put "):
+            action = ' '.join(['in/on' if e == 'in' or e == 'on' else e for e in action.split()])
+        if action.__len__() > 80 and not action.startswith("think: "):
+            action = "think: " + action
         env_history.add("action", action)
         observation, reward, done, info = env.step([action])
         observation, reward, done = process_ob(observation[0]), info['won'][0], done[0]
