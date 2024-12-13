@@ -13,7 +13,9 @@ def _get_scenario(s: str) -> str:
 def _generate_reflection_query(log_str: str, memory: List[str]) -> str:
     """Allows the Agent to reflect upon a past experience."""
     scenario: str = _get_scenario(log_str)
-    query: str = f"""You will be given the history of a past experience in which you were placed in an environment and given a task to complete. You were unsuccessful in completing the task. Do not summarize your environment, but rather think about the strategy and path you took to attempt to complete the task. Devise a concise, new plan of action that accounts for your mistake with reference to specific actions that you should have taken. For example, if you tried A and B but forgot C, then devise a plan to achieve C with environment-specific actions. You will need this later when you are solving the same task. Give your plan after "Plan". Here are two examples:
+    # query: str = f"""You will be given the history of a past experience in which you were placed in an environment and given a task to complete. You were unsuccessful in completing the task. Do not summarize your environment, but rather think about the strategy and path you took to attempt to complete the task. Devise a concise, new plan of action that accounts for your mistake with reference to specific actions that you should have taken. For example, if you tried A and B but forgot C, then devise a plan to achieve C with environment-specific actions. You will need this later when you are solving the same task. Give your plan after "Plan". Here are two examples:
+    # query: str = f"""You will be given the history of a past experience in which you were placed in an environment and given a task to complete. You were unsuccessful in completing the task. Review the strategy and path you took to attempt the task, identifying any missed or incorrect actions. Devise a concise, new plan of action to address your previous mistake, referencing specific, environment-specific actions to correct your approach. After forming the plan, describe the expected outcomes and anticipated states upon successful execution of the corrected plan. Use "Plan" to present your new strategy and "Expected Outcomes and States" to describe the anticipated results. Here are two examples
+    query: str = f"""You will be given the history of a past experience in which you were placed in an environment and given a task to complete. You were unsuccessful in completing the task. Do not summarize your environment, but rather think about the strategy and path you took to attempt to complete the task. Under the heading "Failure Analysis," describe these errors, omissions, or incorrect actions that prevented successful completion of the task. Then, under the heading "Plan," provide a concise, improved sequence of actions that addresses the identified mistakes. For example, if you tried A and B but forgot C, then devise a plan to achieve C with environment-specific actions. You will need this later when you are solving the same task. Be sure to include environment-specific adjustments that will help ensure success. Your final output should contain both "Failure Analysis" and "Plan." Here are two examples
 
 {FEW_SHOT_EXAMPLES}
 
@@ -24,7 +26,8 @@ def _generate_reflection_query(log_str: str, memory: List[str]) -> str:
         for i, m in enumerate(memory):
             query += f'Trial #{i}: {m}\n'
 
-    query += '\n\nNew plan:'
+    query += '\n\nFaliure analysis:'
+    query += '\n\nNew Plan:'
     return query
 
 def update_memory(trial_log_path: str, env_configs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
