@@ -12,6 +12,7 @@ if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+import torch as th
 
 
 Model = Literal["gpt-4", "gpt-3.5-turbo", "text-davinci-003"]
@@ -49,3 +50,13 @@ def get_chat(prompt: str, model: Model="gpt-3.5-turbo", temperature: float = 0.0
         temperature=temperature,
     )
     return response.choices[0]["message"]["content"]
+
+@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+def get_embedding(input: str) -> th.Tensor:
+    response = openai.Embedding.create(
+        model="text-embedding-ada-002",
+        input=input,
+        encoding_format="float"
+    )
+
+    return response.data[0]['embedding']

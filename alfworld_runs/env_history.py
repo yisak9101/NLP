@@ -2,8 +2,8 @@ from typing import List, Dict
 
 
 class EnvironmentHistory:
-    def __init__(self, base_query: str, start_info, memory: List[str], history: List[Dict[str, str]] = []) -> None:
-        self._cur_query: str = f'{_get_base_query(base_query, start_info, memory)}'
+    def __init__(self, base_query: str, start_info, memory: List[str], history: List[Dict[str, str]] = [], similar_env = None) -> None:
+        self._cur_query: str = f'{_get_base_query(base_query, start_info, memory, similar_env)}'
         self._history: List[Dict[str, str]] = history
         self._last_action: str = ''
         self._is_exhausted: bool = False
@@ -40,7 +40,7 @@ class EnvironmentHistory:
                 s += '\n'
         return s
 
-def _get_base_query(base_query: str, start_info: str, memory: List[str]) -> str:
+def _get_base_query(base_query: str, start_info: str, memory: List[str], similar_env) -> str:
     query = base_query
 
     # add memory if it exists
@@ -48,5 +48,8 @@ def _get_base_query(base_query: str, start_info: str, memory: List[str]) -> str:
         query += '\n\nYour memory for the task below:'
         for i, m in enumerate(memory):
             query += f'\nTrial {i}:\n{m.strip()}'
+    if similar_env is not None and len(similar_env['memory']) > 0:
+        query += f'\n\nYour memory for the similar task: {similar_env["task"]}\n{similar_env["memory"][-1]}'
+
     query += f"\nHere is the task:\n{start_info}"
     return query

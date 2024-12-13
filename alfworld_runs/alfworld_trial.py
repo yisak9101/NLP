@@ -8,6 +8,9 @@ import openai
 import importlib
 import alfworld
 import alfworld.agents.environment
+import torch.nn.functional as F
+import torch as th
+from alfworld_runs.utils import get_embedding
 from utils import Model, get_chat, get_completion
 from env_history import EnvironmentHistory
 
@@ -43,11 +46,11 @@ def process_ob(ob):
         ob = ob[ob.find('. ')+2:]    
     return ob
 
-def alfworld_run(env, base_prompt, memory: List[str], to_print=True, ob='', model: Model = "text-davinci-003") -> Tuple[EnvironmentHistory, bool]:
+def alfworld_run(env, base_prompt, memory: List[str], to_print=True, ob='', model: Model = "text-davinci-003", similar_env: List[Dict[str, Any]] = None) -> Tuple[EnvironmentHistory, bool]:
     if len(memory) > 3:
-        env_history = EnvironmentHistory(base_prompt, ob, memory[-3:], [])
+        env_history = EnvironmentHistory(base_prompt, ob, memory[-3:], [], similar_env)
     else:
-        env_history = EnvironmentHistory(base_prompt, ob, memory, [])
+        env_history = EnvironmentHistory(base_prompt, ob, memory, [], similar_env)
     env_history.reset()
     if to_print:
         print(ob)
@@ -110,7 +113,12 @@ def run_trial(
     for z, env_config in enumerate(env_configs):
         ob, info = env.reset()
         ob = '\n'.join(ob[0].split('\n\n')[1:])
+        task = ob.split("Your task is to: ", 1)[1].strip()
         name = '/'.join(info['extra.gamefile'][0].split('/')[-3:-1])
+
+        if env_config['task'] == '':
+            env_config['task'] = task
+            env_config['embedding'] = get_embedding(task)
 
         print(f"using {name}")
 
@@ -124,10 +132,22 @@ def run_trial(
                 wf.write(f'\n#####\n\nEnvironment #{z}: Success\n\n#####\n')
             continue
 
+        most_similar_env_config = None
+        highest_sim = -1e10
+        for other_env_config in env_configs:
+            if task == other_env_config['task']:
+                continue
+
+            if other_env_config["is_success"] == True and other_env_config["embedding"] != []:
+                sim = F.cosine_similarity(th.tensor(env_config['embedding']).unsqueeze(0), th.tensor(other_env_config['embedding']).unsqueeze(0), dim=1).item()
+                if sim > highest_sim:
+                    highest_sim = sim
+                    most_similar_env_config = other_env_config
+
         for i, (k, v) in enumerate(PREFIXES.items()):
             if name.startswith(k):
                 base_prompt = 'Interact with a household to solve a task. Here are two examples.\n' + d[f'react_{v}_1'] + d[f'react_{v}_0']
-                final_env_history, is_success = alfworld_run(env, base_prompt, env_config["memory"] if use_memory else [], to_print=True, ob=ob, model=model)
+                final_env_history, is_success = alfworld_run(env, base_prompt, env_config["memory"] if use_memory else [], to_print=True, ob=ob, model=model, similar_env=most_similar_env_config)
 
                 # update env config
                 if is_success:

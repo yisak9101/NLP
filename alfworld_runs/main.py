@@ -50,7 +50,9 @@ def main(args) -> None:
                 'name': f'env_{i}',
                 'memory': [],
                 'is_success': False,
-                'skip': False
+                'skip': False,
+                'task': '',
+                'embedding': [],
             }]
     
     world_log_path: str = os.path.join(logging_dir, 'world.log')
