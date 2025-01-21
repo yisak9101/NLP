@@ -14,7 +14,7 @@ from langchain.schema import (
 from langchain.agents.react.base import DocstoreExplorer
 from langchain.docstore.base import Docstore
 from langchain.prompts import PromptTemplate
-from llm import AnyOpenAILLM
+from llm import GeminiLLM
 from prompts import reflect_prompt, react_agent_prompt, react_reflect_agent_prompt, REFLECTION_HEADER, LAST_TRIAL_HEADER, REFLECTION_AFTER_LAST_TRIAL_HEADER
 from prompts import cot_agent_prompt, cot_reflect_agent_prompt, cot_reflect_prompt, COT_INSTRUCTION, COT_REFLECT_INSTRUCTION
 from fewshots import WEBTHINK_SIMPLE6, REFLECTIONS, COT, COT_REFLECT
@@ -42,13 +42,13 @@ class CoTAgent:
                     reflect_prompt: PromptTemplate = cot_reflect_prompt,
                     cot_examples: str = COT,
                     reflect_examples: str = COT_REFLECT,
-                    self_reflect_llm: AnyOpenAILLM = AnyOpenAILLM(
+                    self_reflect_llm: GeminiLLM = GeminiLLM(
                                             temperature=0,
                                             max_tokens=250,
                                             model_name="gpt-3.5-turbo",
                                             model_kwargs={"stop": "\n"},
                                             openai_api_key=os.environ['OPENAI_API_KEY']),
-                    action_llm: AnyOpenAILLM = AnyOpenAILLM(
+                    action_llm: GeminiLLM = GeminiLLM(
                                             temperature=0,
                                             max_tokens=250,
                                             model_name="gpt-3.5-turbo",
@@ -159,7 +159,7 @@ class ReactAgent:
                  max_steps: int = 6,
                  agent_prompt: PromptTemplate = react_agent_prompt,
                  docstore: Docstore = Wikipedia(),
-                 react_llm: AnyOpenAILLM = AnyOpenAILLM(
+                 react_llm: GeminiLLM = GeminiLLM(
                                             temperature=0,
                                             max_tokens=100,
                                             model_name="gpt-3.5-turbo",
@@ -269,13 +269,13 @@ class ReactReflectAgent(ReactAgent):
                  agent_prompt: PromptTemplate = react_reflect_agent_prompt,
                  reflect_prompt: PromptTemplate = reflect_prompt,
                  docstore: Docstore = Wikipedia(),
-                 react_llm: AnyOpenAILLM = AnyOpenAILLM(
+                 react_llm: GeminiLLM = GeminiLLM(
                                              temperature=0,
                                              max_tokens=100,
                                              model_name="gpt-3.5-turbo",
                                              model_kwargs={"stop": "\n"},
                                              openai_api_key=os.environ['OPENAI_API_KEY']),
-                 reflect_llm: AnyOpenAILLM = AnyOpenAILLM(
+                 reflect_llm: GeminiLLM = GeminiLLM(
                                                temperature=0,
                                                max_tokens=250,
                                                model_name="gpt-3.5-turbo",
@@ -334,8 +334,8 @@ class ReactReflectAgent(ReactAgent):
 gpt2_enc = tiktoken.encoding_for_model("text-davinci-003")
 
 def parse_action(string):
-    pattern = r'^(\w+)\[(.+)\]$'
-    match = re.match(pattern, string)
+    pattern = r'([A-Za-z]+)\[(.+?)\]'
+    match = re.search(pattern, string)
     
     if match:
         action_type = match.group(1)
@@ -343,7 +343,7 @@ def parse_action(string):
         return action_type, argument
     
     else:
-        return None
+        return None, None
 
 def format_step(step: str) -> str:
     return step.strip('\n').strip().replace('\n', '')
